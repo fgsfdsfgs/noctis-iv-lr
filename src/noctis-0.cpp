@@ -275,6 +275,9 @@ void handle_input() {
             case SDL_SCANCODE_COMMA:
                 keys.push(',');
                 break;
+            case SDL_SCANCODE_PERIOD:
+                keys.push('.');
+                break;
             case SDL_SCANCODE_SLASH:
                 keys.push('/');
                 break;
