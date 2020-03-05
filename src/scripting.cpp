@@ -48,11 +48,21 @@ namespace sfunctions {
 //Bypasses GOESNet screen and prints directly to the console
 void console_print(const std::string &str) {
     printf("%s", str.c_str());
-
 }
 
 void print(const std::string &str) {
     script_output += str;
+}
+
+void println(const std::string &str) {
+    script_output += str;
+
+    const int len = str.size();
+    const int cols = len % 21;
+    if (len && !cols) return; // already on the next line
+
+    for (int i = cols; i < 21; ++i)
+        script_output += " ";
 }
 
 }
@@ -76,8 +86,10 @@ void register_functions() {
 
     register_function("void realprint(const string str)", sfunctions::console_print);
     register_function("void print(const string str)", sfunctions::print);
+    register_function("void println(const string str)", sfunctions::println);
 
     printf("Done\n");
+    fflush(stdout);
 }
 
 // If the script wasn't already loaded into memory, it should be now.
