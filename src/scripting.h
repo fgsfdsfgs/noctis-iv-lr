@@ -22,6 +22,7 @@ namespace as {
     extern void register_functions();
     extern void load_script(const char *);
     extern asIScriptContext* get_main_context(asIScriptModule *);
+    extern void print_script_error(asIScriptContext *ctx);
 }
 
 #endif // NIVLR_SCRIPTING_H

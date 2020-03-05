@@ -7,6 +7,8 @@
 #include <string>
 #include <exception>
 #include "angelscript_addons/scriptstdstring/scriptstdstring.h"
+#include "angelscript_addons/scriptfile/scriptfile.h"
+#include "angelscript_addons/scriptarray/scriptarray.h"
 
 namespace as {
 const char * SCRIPT_DIR = "./res/scripts";
@@ -52,6 +54,7 @@ void console_print(const std::string &str) {
 void print(const std::string &str) {
     script_output += str;
 }
+
 }
 
 template<class T>
@@ -61,15 +64,19 @@ void register_function(const char *script_func_sig, T (*func_ptr)) {
 }
 
 void register_functions() {
-    // AngelScript StdString Add-On
-    RegisterStdString(engine);
+    printf("Loading add-ons...");
+    fflush(stdout);
 
-    printf("Loading console_print...");
+    RegisterScriptArray(engine, false);
+    RegisterStdString(engine);
+    RegisterScriptFile(engine);
+
+    printf("Done\nLoading built-in functions...");
     fflush(stdout);
+
     register_function("void realprint(const string str)", sfunctions::console_print);
-    printf("Done\nLoading print...");
-    fflush(stdout);
     register_function("void print(const string str)", sfunctions::print);
+
     printf("Done\n");
 }
 
@@ -134,7 +141,7 @@ void load_script(const char * name) {
 
 // Creates a context for the module with the main() function prepared.
 asIScriptContext* get_main_context(asIScriptModule *module) {
-    asIScriptFunction *main_function = module->GetFunctionByDecl("void main()");
+    asIScriptFunction *main_function = module->GetFunctionByDecl("void main(const string args)");
 
     if (main_function == nullptr) {
         printf("Script is missing main()");
@@ -146,6 +153,23 @@ asIScriptContext* get_main_context(asIScriptModule *module) {
 
     return context;
 }
+
+void print_script_error(asIScriptContext *ctx) {
+    asIScriptEngine *engine = ctx->GetEngine();
+
+    // Determine the exception that occurred
+    printf("desc: %s\n", ctx->GetExceptionString());
+
+    // Determine the function where the exception occurred
+    const asIScriptFunction *function = ctx->GetExceptionFunction();
+    printf("func: %s\n", function->GetDeclaration());
+    printf("modl: %s\n", function->GetModuleName());
+    printf("sect: %s\n", function->GetScriptSectionName());
+
+    // Determine the line number where the exception occurred
+    printf("line: %d\n", ctx->GetExceptionLineNumber());
+}
+
 
 /*namespace classes {
 

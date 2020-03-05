@@ -7,7 +7,7 @@ find_library(angelscript REQUIRED)
 
 include_directories(${SDL2_INCLUDE_DIRS})
 
-set(ANGELSCRIPT_ADDONS src/angelscript_addons/scriptstdstring/scriptstdstring.cpp)
+set(ANGELSCRIPT_ADDONS src/angelscript_addons/scriptstdstring/scriptstdstring.cpp src/angelscript_addons/scriptarray/scriptarray.cpp src/angelscript_addons/scriptfile/scriptfile.cpp)
 
 set(SOURCE_FILES src/noctis.cpp src/noctis-1.cpp src/noctis-0.cpp src/brtl.cpp src/scripting.cpp)
 
