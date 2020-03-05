@@ -4438,7 +4438,7 @@ void planetary_main() {
     exitflag = 0;
 
     if (entryflag) {
-        FILE* sfh = fopen(surface_file, "r");
+        FILE* sfh = fopen(surface_file, "rb");
 
         if (sfh != nullptr) {
             fread(&landing_pt_lon, 2, 1, sfh);
@@ -5569,7 +5569,7 @@ void planetary_main() {
                     }
 
                     sprintf((char*) snapfilename, "gallery/SNAP%04d.BMP", prog);
-                    ih = fopen((char*) snapfilename, "r");
+                    ih = fopen((char*) snapfilename, "rb");
 
                     if (ih != nullptr) {
                         fclose (ih);
@@ -5577,9 +5577,9 @@ void planetary_main() {
                 } while (ih != nullptr);
 
                 //
-                i9997 = fopen ("gallery/SNAP9997.BMP", "r");
-                i9998 = fopen ("gallery/SNAP9998.BMP", "r");
-                i9999 = fopen ("gallery/SNAP9999.BMP", "r");
+                i9997 = fopen ("gallery/SNAP9997.BMP", "rb");
+                i9998 = fopen ("gallery/SNAP9998.BMP", "rb");
+                i9999 = fopen ("gallery/SNAP9999.BMP", "rb");
 
                 if (i9997 == nullptr || i9998 == nullptr || i9999 == nullptr) {
                     if (i9997 != nullptr) {
