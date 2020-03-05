@@ -1067,6 +1067,7 @@ void vehicle(float opencapcount) {
         if (goesfile_pos > maxline) goesfile_pos = maxline;
         const int copychars = std::min((int)(sizeof(osscreen[1]) - 1), outlen - maxline);
 
+        memset(osscreen[1], 0, sizeof(osscreen[1]));
         memcpy(osscreen[1], as::script_output.c_str() + goesfile_pos, copychars);
         osscreen[1][copychars] = '\0'; 
     }
