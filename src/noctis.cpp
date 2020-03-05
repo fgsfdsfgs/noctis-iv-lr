@@ -407,6 +407,7 @@ void mswrite(int16_t screen_id, const char *text) {
 int8_t gnc_pos            = 0;      // Character number in command line.
 int32_t goesfile_pos      = 0;      // Position of the GOES output file
 char goesnet_command[120] = "_";    // GOES Net Command Line
+std::string goesnet_args = "";      // GOES Net args to pass to AngelScript
 const char *comm = "data/comm.bin"; // File di comunicazione dei moduli.
 
 /* Freezes the situation (when exiting the program or running a module). */
@@ -520,6 +521,15 @@ void run_goesnet_module() {
         // Remove '_' from the command
         goesnet_command[gnc_pos] = 0;
 
+        // Separate script name and args
+        char *spc = strchr(goesnet_command, ' ');
+        if (spc) {
+          *spc = '\0';
+          goesnet_args = spc + 1;
+        } else {
+          goesnet_args = "";
+        }
+
         printf("Loading script...\n");
         as::load_script(goesnet_command);
 
@@ -529,13 +539,23 @@ void run_goesnet_module() {
         printf("Creating context...\n");
         asIScriptContext *context = as::get_main_context(module);
 
+        printf("Injecting args...\n");
+        context->SetArgObject(0, &goesnet_args);
+
         printf("Executing...\n");
-        context->Execute();
+        if (context->Execute() != asEXECUTION_FINISHED)
+            as::print_script_error(context);
 
         context->Release();
     }
     catch (std::exception e) {
         printf("%s\n", e.what());
+    }
+
+    //Convert all character to uppercase,
+    // since only uppercase chars can be displayed.
+    for (auto ich = as::script_output.begin(); ich < as::script_output.end(); ++ich) {
+        *ich = toupper(*ich);
     }
 
     /* FILE *ch;
@@ -996,21 +1016,7 @@ void vehicle(float opencapcount) {
                     case 0x4F: // End key
                     case 0x76: // Pg-Down
                     case 0x91: { // CTRL-Down
-                        FILE *screenfile = fopen(goesoutputfile, "r");
-
-                        if (screenfile != nullptr) {
-                            uint32_t len = fseek(screenfile, 0, SEEK_END);
-                            fseek(screenfile, 0, SEEK_SET);
-                            goesfile_pos = len - 7 * 21;
-
-                            if (goesfile_pos < 0) {
-                                goesfile_pos = 0;
-                            }
-
-                            fclose(screenfile);
-                        }
-
-                        goesk_e = -1;
+                        // TODO
                         break;
                     }
                     case 0x47: // Home Button
@@ -1056,16 +1062,13 @@ void vehicle(float opencapcount) {
             }
         }
 
-        memset(osscreen[1], 0, 21 * 7);
+        const int outlen = as::script_output.size();
+        const int maxline = std::max(0, outlen - 21 * 7);
+        if (goesfile_pos > maxline) goesfile_pos = maxline;
+        const int copychars = std::min((int)(sizeof(osscreen[1]) - 1), outlen - maxline);
 
-        //Convert all character to uppercase,
-        // since only uppercase chars can be displayed.
-        for (auto ich = as::script_output.begin(); ich < as::script_output.end(); ++ich) {
-            *ich = toupper(*ich);
-        }
-
-        // TODO: Length checking so we don't overflow the screen buffer
-        memcpy(osscreen[1], as::script_output.c_str(), as::script_output.size());
+        memcpy(osscreen[1], as::script_output.c_str() + goesfile_pos, copychars);
+        osscreen[1][copychars] = '\0'; 
     }
 
     // Intercettazione tasti (prioritaria) per la planetary map.
