@@ -1,5 +1,4 @@
-void main()
-{
-    realprint(6);
-    print(9);
+void main(const string args) {
+    realprint("Hi console\n");
+    print("My args:\n" + args + "\n");
 }
