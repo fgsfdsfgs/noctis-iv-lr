@@ -10,7 +10,6 @@
 #include <cstring>
 #include <ctime>
 
-#include <fcntl.h>
 #include <memory.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -19,6 +18,8 @@
 #define SDL_MAIN_HANDLED
 #endif
 #include <SDL2/SDL.h>
+
+#include <angelscript.h>
 
 /*
 

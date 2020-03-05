@@ -3,10 +3,13 @@
     Supervision functions for the base module.
 */
 
+#include "scripting.h"
 #include "brtl.h"
 #include "noctis-0.h"
 #include "noctis-d.h"
 #include <chrono>
+#include <fstream>
+#include <iostream>
 #include <thread>
 
 #ifdef __EMSCRIPTEN__
@@ -66,7 +69,8 @@ void fix_local_target() {
     reaction_time                  = 0.01;
 }
 
-/* Lampada alogena (ovvero il laser a diffusione interno alle zattere). */
+/* Lampada alogena (ovvero il laser a diffusione interno alle zattere).
+ * Halogen lamp (i.e. the diffusion laser inside the rafts). */
 
 void alogena() {
     float x[3], y[3], z[3];
@@ -233,11 +237,13 @@ noevid:
     setfx(0);
 }
 
-/* Schemi aggiuntivi per lo schermo del computer. */
+/* Schemi aggiuntivi per lo schermo del computer.
+ * Additional schemes(layouts? borders?) for the computer screen. */
 
 void frame(float x, float y, float l, float h, float borderwidth,
            uint8_t color) {
     // disegna una cornice rettangolare.
+    // draw a rectangular frame.
     float vx[4], vy[4], vz[4] = {0, 0, 0, 0};
     float x0 = cam_x;
     float y0 = cam_y;
@@ -354,16 +360,18 @@ int8_t force_update          = 0;      // Force screen to refresh
 int8_t active_screen         = -1;      // Screen currently active
 int16_t osscreen_cursor_x[2] = {0, 0}; // Cursor position (x)
 int16_t osscreen_cursor_y[2] = {0, 0}; // Cursor position (y)
-uint8_t osscreen[2][7 * 21 + 1];       // Array of GOES screens
+char osscreen[2][7 * 21 + 1];       // Array of GOES screens
 
 void mslocate(int16_t screen_id, int16_t cursor_x, int16_t cursor_y) {
     // Rilocazione cursore (multischermo).
+    // Cursor relocation (multi-screen).
     osscreen_cursor_x[screen_id] = cursor_x;
     osscreen_cursor_y[screen_id] = cursor_y;
 }
 
 void mswrite(int16_t screen_id, const char *text) {
     // Scrittura caratteri (multischermo).
+    // Character writing (multi-screen).
     int16_t i, j = 0;
     int8_t symbol;
 
@@ -506,15 +514,39 @@ char *get_exe_dir() {
 
 // Execution of an executable module of the GOES Net.
 void run_goesnet_module() {
-    FILE *ch;
+    as::script_output.clear();
 
-    /* Allows for prepending './' to the command,
+    try {
+        // Remove '_' from the command
+        goesnet_command[gnc_pos] = 0;
+
+        printf("Loading script...\n");
+        as::load_script(goesnet_command);
+
+        printf("Grabbing module...\n");
+        asIScriptModule *module = as::engine->GetModule(goesnet_command, asGM_ONLY_IF_EXISTS);
+
+        printf("Creating context...\n");
+        asIScriptContext *context = as::get_main_context(module);
+
+        printf("Executing...\n");
+        context->Execute();
+
+        context->Release();
+    }
+    catch (std::exception e) {
+        printf("%s\n", e.what());
+    }
+
+    /* FILE *ch;
+
+     * Allows for prepending './' to the command,
      * 	so that a bash shell can run the proper module file.
      * TODO: Find a better solution that doesn't involve
-     * 	this wasteful malloc call. */
+     * 	this wasteful malloc call. *
     char *command_prepended = (char *) malloc(200);
 
-    /* Reading the path to the Noctis binary */
+    // Reading the path to the Noctis binary
     char *dir = get_exe_dir();
 
     // Save the situation because some modules need it.
@@ -529,9 +561,9 @@ void run_goesnet_module() {
             fclose(ch);
         }
 
-        /* Delete the last character (which is the '_' cursor) from the command
+         * Delete the last character (which is the '_' cursor) from the command
          * line, then add the redirection to the "goesfile.txt" file.
-         */
+         *
         goesnet_command[gnc_pos] = 0;
         strcat(goesnet_command, " >");
         strcat(goesnet_command, goesoutputfile);
@@ -546,9 +578,10 @@ void run_goesnet_module() {
     // Free space allocated for command.
     free(command_prepended);
 
-    /* Free space allocated for exe path */
-    free(dir);
+    // Free space allocated for exe path
+    free(dir); */
 
+    /*
     if (!adapted) {
         printf("Sorry, GOES Net crashed.\n");
         printf("System integrity compromised: any key to quit.\n\n");
@@ -601,7 +634,7 @@ void run_goesnet_module() {
             fclose(ch);
             remove(comm);
         }
-    }
+    } */
 
     force_update = 1;
     goesfile_pos = 0;
@@ -811,11 +844,12 @@ void show_planetary_map() {
 /*  Draw the stardrifter. (The one you are using, seen from the inside.)
     It also assumes the task of deciphering keyboard commands for GOESnet. */
 
+// What do these variables do?
 int16_t goesk_a = -1;
 int16_t goesk_e = -1;
 
 void vehicle(float opencapcount) {
-    int16_t n, c, i, j, k, screenfile;
+    int16_t n, c, i, j, k;
     int8_t short_text[11];
     uint8_t chcol;
     float backup_cam_x, backup_cam_z;
@@ -945,94 +979,93 @@ void vehicle(float opencapcount) {
     }
 
     /* Key interception (priority) for the "STARMAP TREE". */
-
+    // Starmap Tree???
     if (force_update || (active_screen == 1 && is_key())) {
         if (!force_update) {
-        krep1:
-            c       = get_key();
-            goesk_a = c;
-
-            if (!c) {
-                goesk_a = -1;
+            while (is_key()) {
                 c       = get_key();
-                goesk_e = c;
+                goesk_a = c;
 
-                switch (c) {
-                case 0x4F:
-                case 0x76:
-                case 0x91:
-                    screenfile = open(goesoutputfile, 0);
+                if (!c) {
+                    goesk_a = -1;
+                    c       = get_key();
+                    goesk_e = c;
 
-                    if (screenfile > -1) {
-                        uint32_t len = lseek(screenfile, 0, SEEK_END);
-                        lseek(screenfile, 0, SEEK_SET);
-                        goesfile_pos = len - 7 * 21;
+                    //TODO: Replace DOS hex keycodes with SDL2 scancodes
+                    switch (c) {
+                    case 0x4F: // End key
+                    case 0x76: // Pg-Down
+                    case 0x91: { // CTRL-Down
+                        FILE *screenfile = fopen(goesoutputfile, "r");
+
+                        if (screenfile != nullptr) {
+                            uint32_t len = fseek(screenfile, 0, SEEK_END);
+                            fseek(screenfile, 0, SEEK_SET);
+                            goesfile_pos = len - 7 * 21;
+
+                            if (goesfile_pos < 0) {
+                                goesfile_pos = 0;
+                            }
+
+                            fclose(screenfile);
+                        }
+
+                        goesk_e = -1;
+                        break;
+                    }
+                    case 0x47: // Home Button
+                    case 0x84: // CTRL-PgUp
+                    case 0x8D: // CTRL-Up
+                        goesfile_pos = 0;
+                        goesk_e      = -1;
+                        break;
+
+                    case 80: // Down arrow key
+                        goesfile_pos += 21;
+                        goesk_e = -1;
+                        break;
+
+                    case 72: // Up arrow key
+                        goesfile_pos -= 21;
 
                         if (goesfile_pos < 0) {
                             goesfile_pos = 0;
                         }
 
-                        close(screenfile);
+                        goesk_e = -1;
+                        break;
+
+                    case 0x51: // Page Down
+                        goesfile_pos += 21 * 7;
+                        goesk_e = -1;
+                        break;
+
+                    case 0x49: // Page Up
+                        goesfile_pos -= 21 * 7;
+
+                        if (goesfile_pos < 0) {
+                            goesfile_pos = 0;
+                        }
+
+                        goesk_e = -1;
+                        break;
+                    default:
+                        break;
                     }
-
-                    goesk_e = -1;
-                    break;
-
-                case 0x47:
-                case 0x84:
-                case 0x8D:
-                    goesfile_pos = 0;
-                    goesk_e      = -1;
-                    break;
-
-                case 80:
-                    goesfile_pos += 21;
-                    goesk_e = -1;
-                    break;
-
-                case 72:
-                    goesfile_pos -= 21;
-
-                    if (goesfile_pos < 0) {
-                        goesfile_pos = 0;
-                    }
-
-                    goesk_e = -1;
-                    break;
-
-                case 0x51:
-                    goesfile_pos += 21 * 7;
-                    goesk_e = -1;
-                    break;
-
-                case 0x49:
-                    goesfile_pos -= 21 * 7;
-
-                    if (goesfile_pos < 0) {
-                        goesfile_pos = 0;
-                    }
-
-                    goesk_e = -1;
-                    break;
-                default:
-                    break;
                 }
-            }
-
-            if (is_key()) {
-                goto krep1;
             }
         }
 
         memset(osscreen[1], 0, 21 * 7);
-        screenfile = open(goesoutputfile, 0);
 
-        if (screenfile > -1) {
-            lseek(screenfile, goesfile_pos, SEEK_SET);
-            n              = read(screenfile, osscreen[1], 7 * 21);
-            osscreen[1][n] = 0;
-            close(screenfile);
+        //Convert all character to uppercase,
+        // since only uppercase chars can be displayed.
+        for (auto ich = as::script_output.begin(); ich < as::script_output.end(); ++ich) {
+            *ich = toupper(*ich);
         }
+
+        // TODO: Length checking so we don't overflow the screen buffer
+        memcpy(osscreen[1], as::script_output.c_str(), as::script_output.size());
     }
 
     // Intercettazione tasti (prioritaria) per la planetary map.
@@ -1164,6 +1197,8 @@ void vehicle(float opencapcount) {
 
     // Tracciamento degli schermi di GOESNet.
     // Si tratta dei primi due schermi sulla paratia destra.
+    // Tracking GOESNet screens.
+    // These are the first two screens on the right bulkhead.
     H_MATRIXS = 6;
     V_MATRIXS = 3;
     change_txm_repeating_mode();
@@ -1441,11 +1476,11 @@ void update_star_label() {
             star_label_pos   = search_id_code(ap_target_id, 'S');
 
             if (star_label_pos != -1) {
-                smh = open(starmap_file, 0);
-                lseek(smh, star_label_pos, SEEK_SET);
-                read(smh, &star_id, 8);
-                read(smh, &star_label, 24);
-                close(smh);
+                FILE* smh = fopen(starmap_file, "r");
+                fseek(smh, star_label_pos, SEEK_SET);
+                fread(&star_id, 8, 1, smh);
+                fread(&star_label, 24, 1, smh);
+                fclose(smh);
             } else {
                 memcpy(star_label, star_no_label, 24);
             }
@@ -1465,11 +1500,11 @@ void update_planet_label() {
         planet_label_pos = search_id_code(current_planet_id, 'P');
 
         if (planet_label_pos != -1) {
-            smh = open(starmap_file, 0);
-            lseek(smh, planet_label_pos, SEEK_SET);
-            read(smh, &planet_id, 8);
-            read(smh, &planet_label, 24);
-            close(smh);
+            FILE* smh = fopen(starmap_file, "r");
+            fseek(smh, planet_label_pos, SEEK_SET);
+            fread(&planet_id, 8, 1, smh);
+            fread(&planet_label, 24, 1, smh);
+            fclose(smh);
         } else {
             if (nearstar_p_owner[ip_targetted] == -1) {
                 memcpy(planet_label, planet_no_label, 24);
@@ -2058,12 +2093,12 @@ void dev_commands() {
                         labstar = 0;
 
                         if (star_label_pos >= sm_consolidated) {
-                            smh = open(starmap_file, 4);
+                            FILE* smh = fopen(starmap_file, "w");
 
-                            if (smh > -1) {
-                                lseek(smh, star_label_pos, SEEK_SET);
-                                write(smh, &dummy_identity[0], 8);
-                                close(smh);
+                            if (smh != nullptr) {
+                                fseek(smh, star_label_pos, SEEK_SET);
+                                fwrite(&dummy_identity[0], 8, 1, smh);
+                                fclose(smh);
                                 ap_target_previd = 12345;
                                 status("REMOVED", 50);
                                 star_label_pos = -1;
@@ -2084,33 +2119,32 @@ void dev_commands() {
                         }
                     }
                 } else {
-                    smh = open(starmap_file, 4);
+                    FILE* smh = fopen(starmap_file, "r+");
 
-                    if (smh == -1) {
-                        smh             = creat(starmap_file, 0);
+                    if (smh == nullptr) {
+                        smh             = fopen(starmap_file, "w+");
                         sm_consolidated = 4;
-                        write(smh, &sm_consolidated, 4);
+                        fwrite(&sm_consolidated, 4, 1, smh);
                     }
 
-                    if (smh > -1) {
-                        lseek(smh, 4, SEEK_SET);
-
-                        while (read(smh, comp_data, 32) == 32)
+                    if (smh != nullptr) {
+                        fseek(smh, 4, SEEK_SET);
+                        while (fread(comp_data, 1, 32, smh) == 32)
                             if (memcmp(comp_data, dummy_identity, 8)) {
                                 if (!strcasecmp((char *) (comp_data + 8),
                                                 (char *) star_label)) {
                                     status("EXTANT", 50);
                                     ap_target_previd = 12345;
                                     star_label_pos   = -1;
-                                    close(smh);
+                                    fclose(smh);
                                     return;
                                 }
                             }
 
-                        lseek(smh, 0, SEEK_END);
-                        star_label_pos = lseek(smh, 0, SEEK_CUR);
-                        write(smh, &star_id, 32);
-                        close(smh);
+                        fseek(smh, 0, SEEK_END);
+                        star_label_pos = fseek(smh, 0, SEEK_CUR);
+                        fwrite(&star_id, 1, 32, smh);
+                        fclose(smh);
                         status("ASSIGNED", 50);
                         nearstar_labeled++;
                     } else {
@@ -2132,12 +2166,12 @@ void dev_commands() {
                         labplanet = 0;
 
                         if (planet_label_pos >= sm_consolidated) {
-                            smh = open(starmap_file, 4);
+                            FILE* smh = fopen(starmap_file, "w");
 
-                            if (smh > -1) {
-                                lseek(smh, planet_label_pos, SEEK_SET);
-                                write(smh, &dummy_identity[0], 8);
-                                close(smh);
+                            if (smh != nullptr) {
+                                fseek(smh, planet_label_pos, SEEK_SET);
+                                fwrite(&dummy_identity[0], 1, 8, smh);
+                                fclose(smh);
                                 prev_planet_id = 12345;
                                 status("REMOVED", 50);
                                 planet_label_pos = -1;
@@ -2158,33 +2192,33 @@ void dev_commands() {
                         }
                     }
                 } else {
-                    smh = open(starmap_file, 4);
+                    FILE* smh = fopen(starmap_file, "r+");
 
-                    if (smh == -1) {
-                        smh             = creat(starmap_file, 0);
+                    if (smh == nullptr) {
+                        smh             = fopen(starmap_file, "w+");
                         sm_consolidated = 4;
-                        write(smh, &sm_consolidated, 4);
+                        fwrite(&sm_consolidated, 4, 1, smh);
                     }
 
-                    if (smh > -1) {
-                        lseek(smh, 4, SEEK_SET);
+                    if (smh != nullptr) {
+                        fseek(smh, 4, SEEK_SET);
 
-                        while (read(smh, comp_data, 32) == 32)
+                        while (fread(comp_data, 1, 32, smh) == 32)
                             if (memcmp(comp_data, dummy_identity, 8)) {
                                 if (!strcasecmp((char *) (comp_data + 8),
                                                 (char *) planet_label)) {
                                     status("EXTANT", 50);
                                     prev_planet_id   = 12345;
                                     planet_label_pos = -1;
-                                    close(smh);
+                                    fclose(smh);
                                     return;
                                 }
                             }
 
-                        lseek(smh, 0, SEEK_END);
-                        planet_label_pos = lseek(smh, 0, SEEK_CUR);
-                        write(smh, &planet_id, 32);
-                        close(smh);
+                        fseek(smh, 0, SEEK_END);
+                        planet_label_pos = fseek(smh, 0, SEEK_CUR);
+                        fwrite(&planet_id, 1, 32, smh);
+                        fclose(smh);
                         status("ASSIGNED", 50);
                         nearstar_labeled++;
                     } else {
@@ -2382,29 +2416,26 @@ void commands() {
  *  This loads the situation saved by freeze() */
 
 void unfreeze() {
-    FILE *fh; // TBH, I hate fh. fp is better.
     double elapsed, dpwr;
     // Reading the consolidated starmap.
-    smh = open(starmap_file, 4);
+    FILE* smh = fopen(starmap_file, "r+");
 
-    /* TODO: Use fopen, fwrite, etc. for smh I/O
-     * (Check if anywhere else uses this variable, too!) */
-    if (smh > -1) {
-        read(smh, &sm_consolidated, 4);
+    if (smh != nullptr) {
+        fread(&sm_consolidated, 4, 1, smh);
 
         if (!sm_consolidated) {
-            sm_consolidated = lseek(smh, 0, SEEK_END);
-            lseek(smh, 0, SEEK_SET);
-            write(smh, &sm_consolidated, 4);
+            sm_consolidated = fseek(smh, 0, SEEK_END);
+            fseek(smh, 0, SEEK_SET);
+            fwrite(&sm_consolidated, 4, 1, smh);
         }
 
-        close(smh);
+        fclose(smh);
     } else {
         sm_consolidated = 0;
     }
 
     /* Reading the previous situation */
-    fh = fopen(situation_file, "r");
+    FILE *fh = fopen(situation_file, "r");
 
     if (fh == nullptr) {
         return;
@@ -2617,23 +2648,45 @@ int16_t resolve = 64;
 void loop();
 
 int main(int argc, char **argv) {
+    // Set up AngelScript
+    as::init();
+    as::register_functions();
+
+    //This doesn't get check, but callback still exists for errors
+    /*as_errorcode = testmod->Build();
+
+    asIScriptFunction *as_func = testmod->GetFunctionByDecl("void main()");
+
+    if (as_func == 0) {
+        printf("The script is missing void main()\n");
+
+        return 0;
+    }
+
+    asIScriptContext *as_context = as_engine->CreateContext();
+    as_context->Prepare(as_func);
+
+    as_errorcode = as_context->Execute();
+    if (as_errorcode != asEXECUTION_FINISHED) {
+        // The execution didn't complete as expected. Determine what happened.
+        if(as_errorcode == asEXECUTION_EXCEPTION)
+        {
+            // An exception occurred, let the script writer know what happened so it can be corrected.
+            printf("An AngelScript exception '%s' occurred. Please correct the code and try again.\n", as_context->GetExceptionString());
+        }
+    }*/
+
     // Initialize SDL.
     sdl_surface = SDL_CreateRGBSurface(0, 320, 200, 32, 0xFF000000, 0xFF0000,
                                        0xFF00, 0xFF);
-#if NDEBUG
-    window = SDL_CreateWindow("Noctis IV LR", SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, 960, 600,
-                              SDL_WINDOW_RESIZABLE | SDL_WINDOW_INPUT_GRABBED);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-#else
     window = SDL_CreateWindow(
         "Noctis IV LR", SDL_WINDOWPOS_CENTERED, // NOLINT(hicpp-signed-bitwise)
         SDL_WINDOWPOS_CENTERED, 1280, 800,      // NOLINT(hicpp-signed-bitwise)
         SDL_WINDOW_RESIZABLE);
-#endif
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
 
+    // What does this do?
     for (ir = 0; ir < 200; ir++) {
         m200[ir] = ir * 200;
     }
@@ -2677,6 +2730,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+
     unfreeze();
     memset(adapted, 0, QUADWORDS * 4);
     QUADWORDS -= 1440;
@@ -2695,15 +2749,18 @@ int main(int argc, char **argv) {
     tavola_colori(tmppal, 0, 256, 64, 64, 64);
     // causa il recupero dell'eventuale contenuto dello schermo
     // di output della GOES command net
+    // causes the recovery of any screen content
+    // GOES command net output
     force_update = 1;
     // recupero della situazione di superficie
-    sfh = open(surface_file, 0);
+    // recovery of the surface situation
+    FILE* sfh = fopen(surface_file, "r");
 
-    if (sfh > -1) {
+    if (sfh != NULL) {
         // lettura precedenti coordinate di sbarco
-        read(sfh, &landing_pt_lon, 2);
-        read(sfh, &landing_pt_lat, 2);
-        close(sfh);
+        fread(&landing_pt_lon, 2, 1, sfh);
+        fread(&landing_pt_lat, 2, 1, sfh);
+        fclose(sfh);
         // recupero labels del pianeta e della stella-bersaglio
         update_star_label();
         update_planet_label();
@@ -2736,6 +2793,7 @@ int main(int argc, char **argv) {
         QUADWORDS = pqw;
 
         if (exitflag) {
+            as::engine->ShutDownAndRelease();
             freeze();
         }
     }
@@ -2750,6 +2808,7 @@ int main(int argc, char **argv) {
     remove(surface_file);
 
     freeze();
+    as::engine->ShutDownAndRelease();
 }
 
 void swapBuffers() {
@@ -3783,12 +3842,12 @@ nohud_1:
                 tgt_label_pos = search_id_code(targets_table_id[mc], 'S');
 
                 if (tgt_label_pos > -1) {
-                    smh = open(starmap_file, 0);
+                    FILE* smh = fopen(starmap_file, "r");
 
-                    if (smh > -1) {
-                        lseek(smh, tgt_label_pos + 8, SEEK_SET);
-                        read(smh, &target_name[tgts_in_show], 24);
-                        close(smh);
+                    if (smh != nullptr) {
+                        fseek(smh, tgt_label_pos + 8, SEEK_SET);
+                        fread(&target_name[tgts_in_show], 1, 24, smh);
+                        fclose(smh);
                         tgts_in_show++;
                     }
                 }
