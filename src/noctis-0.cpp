@@ -6095,7 +6095,7 @@ void snapshot(int16_t forcenumber, int8_t showdata) {
         }
     }
 
-    ih = fopen((char*) snapfilename, "w+");
+    ih = fopen((char*) snapfilename, "wb+");
 
     if (ih != nullptr) {
         a = 0;

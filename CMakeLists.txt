@@ -11,6 +11,7 @@ set(ANGELSCRIPT_ADDONS src/angelscript_addons/scriptstdstring/scriptstdstring.cp
 
 set(SOURCE_FILES src/noctis.cpp src/noctis-1.cpp src/noctis-0.cpp src/brtl.cpp src/scripting.cpp)
 
+add_compile_options(-O2)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${ANGELSCRIPT_ADDONS})
 target_link_libraries(${PROJECT_NAME} SDL2 angelscript)

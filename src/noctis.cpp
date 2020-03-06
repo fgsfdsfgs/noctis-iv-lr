@@ -1470,6 +1470,8 @@ int8_t moon_no_label[25]   = "NAMELESS MOON #../../...";
 const char *sr_message = "SYSTEM RESET";
 
 void update_star_label() {
+    if (labstar) return; // currently typing the label
+
     if (ap_targetted == -1) {
         strcpy((char *) star_label, "- DIRECT PARSIS TARGET -");
     } else {
@@ -2124,10 +2126,10 @@ void dev_commands() {
                         }
                     }
                 } else {
-                    FILE* smh = fopen(starmap_file, "r+");
+                    FILE* smh = fopen(starmap_file, "rb+");
 
                     if (smh == nullptr) {
-                        smh             = fopen(starmap_file, "w+");
+                        smh             = fopen(starmap_file, "wb+");
                         sm_consolidated = 4;
                         fwrite(&sm_consolidated, 4, 1, smh);
                     }
@@ -2197,10 +2199,10 @@ void dev_commands() {
                         }
                     }
                 } else {
-                    FILE* smh = fopen(starmap_file, "r+");
+                    FILE* smh = fopen(starmap_file, "rb+");
 
                     if (smh == nullptr) {
-                        smh             = fopen(starmap_file, "w+");
+                        smh             = fopen(starmap_file, "wb+");
                         sm_consolidated = 4;
                         fwrite(&sm_consolidated, 4, 1, smh);
                     }
@@ -2423,7 +2425,7 @@ void commands() {
 void unfreeze() {
     double elapsed, dpwr;
     // Reading the consolidated starmap.
-    FILE* smh = fopen(starmap_file, "r+");
+    FILE* smh = fopen(starmap_file, "rb+");
 
     if (smh != nullptr) {
         fread(&sm_consolidated, 4, 1, smh);

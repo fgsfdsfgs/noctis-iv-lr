@@ -5598,7 +5598,7 @@ void planetary_main() {
                 }
 
                 //
-                oh = fopen((char*) snapfilename, "w+");
+                oh = fopen((char*) snapfilename, "wb+");
 
                 if (oh == nullptr) {
                     goto wserror;
@@ -5789,7 +5789,7 @@ void planetary_main() {
                 }
 
                 if (w == 27 && landed) {
-                    FILE* sfh = fopen(surface_file, "w+");
+                    FILE* sfh = fopen(surface_file, "wb+");
 
                     if (sfh != nullptr) {
                         fwrite(&landing_pt_lon, 2, 1, sfh);
