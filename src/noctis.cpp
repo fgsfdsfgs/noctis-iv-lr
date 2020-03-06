@@ -2646,8 +2646,6 @@ float hold_z;
 float tmp_float;
 int32_t p1, p2, p3, p4;
 
-clock_t right_dblclick_timing = 0;
-
 int16_t resolve = 64;
 
 void loop();
@@ -3094,26 +3092,18 @@ void loop() {
         lselect = 0;
     }
 
-    if ((mpul & 2u) && !(p_mpul & 2u) && !right_dblclick) {
-        if (!right_dblclick_timing) {
-            right_dblclick_timing = clock();
-            rselect = 1;
-        } else {
-            if (clock() - right_dblclick_timing < DBL_CLICK_CUTOFF) {
-                right_dblclick     = true;
-                right_dblclick_dir = user_beta;
-            } else {
-                right_dblclick_timing = clock();
-                rselect = 1;
-            }
-        }
+    if ((mpul & 2u) && !(p_mpul & 2u)) {
+        rselect = 1;
     } else {
         rselect = 0;
     }
 
     // Disable double clicking while a screen is selected to fix a few weird
     // quirks.
-    right_dblclick = (right_dblclick && (active_screen == -1));
+    if ((active_screen == -1) && (mpul & 256u) && !(p_mpul & 256u)) {
+        right_dblclick = true;
+        right_dblclick_dir = user_beta;
+    }
 
     if (right_dblclick) {
         if (ap_targetting) {
@@ -3153,10 +3143,8 @@ void loop() {
 
                 pos_z -= zz * 0.25;
 
-                if (fabs(xx) < 25 && fabs(zz) < 25 && fabs(user_beta) < 1) {
-                    right_dblclick_timing = 0;
-                    right_dblclick        = false;
-                }
+                if (fabs(xx) < 25 && fabs(zz) < 25 && fabs(user_beta) < 1)
+                    right_dblclick = false;
 
                 user_beta -= 90;
             } else {
@@ -3165,18 +3153,14 @@ void loop() {
                 pos_z -= zz * 0.25;
 
                 if (sys != 4) {
-                    if (fabs(zz) < 25 && fabs(user_beta) < 1) {
-                        right_dblclick_timing = 0;
-                        right_dblclick        = false;
-                    }
+                    if (fabs(zz) < 25 && fabs(user_beta) < 1)
+                        right_dblclick = false;
                 } else {
                     xx = pos_x + 1700;
                     pos_x -= xx * 0.25;
 
-                    if (fabs(zz) < 25 && fabs(xx) < 25 && fabs(user_beta) < 1) {
-                        right_dblclick_timing = 0;
-                        right_dblclick        = false;
-                    }
+                    if (fabs(zz) < 25 && fabs(xx) < 25 && fabs(user_beta) < 1)
+                        right_dblclick = false;
                 }
             }
         }
@@ -3502,6 +3486,7 @@ jpr:
                     active_screen = -1;
                     status("DESELECTED", 50);
                 }
+                rselect = 0;
             }
         } else {
             active_screen = -1;

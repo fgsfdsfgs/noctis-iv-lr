@@ -147,6 +147,9 @@ void handle_input() {
     static bool ldown = false;
     static bool rdown = false;
 
+    bool ldouble = false;
+    bool rdouble = false;
+
     mdltx = 0;
     mdlty = 0;
     mpul  = 0;
@@ -182,14 +185,17 @@ void handle_input() {
             mouse_x += mdltx;
             mouse_y += mdlty;
         } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-            if (event.button.button == SDL_BUTTON_LEFT)
+            if (event.button.button == SDL_BUTTON_LEFT) {
                 ldown = true;
-            if (event.button.button == SDL_BUTTON_RIGHT)
+                if (event.button.clicks == 2) ldouble = true;
+            } else if (event.button.button == SDL_BUTTON_RIGHT) {
                 rdown = true;
+                if (event.button.clicks == 2) rdouble = true;
+            }
         } else if (event.type == SDL_MOUSEBUTTONUP) {
             if (event.button.button == SDL_BUTTON_LEFT)
                 ldown = false;
-            if (event.button.button == SDL_BUTTON_RIGHT)
+            else if (event.button.button == SDL_BUTTON_RIGHT)
                 rdown = false;
         } else if (event.type == SDL_KEYUP) {
             switch (event.key.keysym.scancode) {
@@ -299,6 +305,10 @@ void handle_input() {
         mpul |= 1u;
     if (rdown)
         mpul |= 2u;
+    if (ldouble)
+        mpul |= 128u;
+    if (rdouble)
+        mpul |= 256u;
 }
 
 // Clears a rectangular region of the video memory.
