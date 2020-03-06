@@ -65,6 +65,19 @@ void println(const std::string &str) {
         script_output += " ";
 }
 
+std::string doubleToBytes(const double val) {
+    return std::string((char *)&val, 8);
+}
+
+double bytesToDouble(const std::string &bytes) {
+    assert(bytes.size() >= 8);
+    return *(double *)bytes.c_str();
+}
+
+bool idEqual(const double a, const double b) {
+    return (a >= b - 0.00001) && (a <= b + 0.00001);
+}
+
 }
 
 template<class T>
@@ -87,6 +100,9 @@ void register_functions() {
     register_function("void realprint(const string str)", sfunctions::console_print);
     register_function("void print(const string str)", sfunctions::print);
     register_function("void println(const string str)", sfunctions::println);
+    register_function("string doubleToBytes(const double val)", sfunctions::doubleToBytes);
+    register_function("double bytesToDouble(const string bytes)", sfunctions::bytesToDouble);
+    register_function("bool idEqual(const double a, const double b)", sfunctions::idEqual);
 
     printf("Done\n");
     fflush(stdout);

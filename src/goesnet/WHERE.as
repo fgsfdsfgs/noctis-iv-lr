@@ -1,10 +1,7 @@
 const string c_starmapPath = "data/STARMAP.BIN";
-const string c_guidePath = "data/GUIDE.BIN";
 
 const string c_divider = "&&&&&&&&&&&&&&&&&&&&&";
-const double c_removed = 2.05950387149503E-27; // "Removed:"
-
-const double c_ideps = 0.00001;
+const double c_removed = bytesToDouble("Removed:");
 
 string rstrip(const string &in str) {
     int last = str.findLastNotOf(" \n\r\t\0");
@@ -102,7 +99,7 @@ void main(const string args) {
             string tmpname = fs.readString(24);
             if (fs.isEndOfFile()) break;
 
-            if (tmpid != c_removed && (tmpid >= found_id - c_ideps && tmpid <= found_id + c_ideps)) {
+            if (tmpid != c_removed && idEqual(tmpid, found_id)) {
                 println(found_name);
                 println("IS PART OF THE");
                 tmpname.resize(20);

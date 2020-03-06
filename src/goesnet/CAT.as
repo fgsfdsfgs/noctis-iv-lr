@@ -2,9 +2,7 @@ const string c_starmapPath = "data/STARMAP.BIN";
 const string c_guidePath = "data/GUIDE.BIN";
 
 const string c_divider = "&&&&&&&&&&&&&&&&&&&&&";
-const double c_removed = 2.05950387149503E-27; // "Removed:"
-
-const double c_ideps = 0.00001;
+const double c_removed = bytesToDouble("Removed:");
 
 string rstrip(const string &in str) {
     int last = str.findLastNotOf(" \n\r\t\0");
@@ -126,7 +124,7 @@ void main(const string args) {
                 const string recmsg = rstrip(fg.readString(76));
                 if (fg.isEndOfFile()) break;
 
-                if (recid >= found_id - c_ideps && recid <= found_id + c_ideps) {
+                if (idEqual(recid, found_id)) {
                     ++rec;
                     // TODO: word wrap
                     if (rec >= recstart && rec <= recend) {
