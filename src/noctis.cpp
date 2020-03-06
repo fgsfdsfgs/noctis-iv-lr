@@ -952,7 +952,7 @@ void vehicle(float opencapcount) {
                 } else if (c == 13) {
                     run_goesnet_module();
                     n = 0;
-
+                    /*
                     if (!memcmp(goesnet_command, "CAST", 4)) {
                         i = 0;
 
@@ -965,6 +965,7 @@ void vehicle(float opencapcount) {
                             i++;
                         }
                     }
+                    */
                     goesnet_command[n]     = '_';
                     goesnet_command[n + 1] = 0;
                     gnc_pos                = n;
