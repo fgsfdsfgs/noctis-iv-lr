@@ -2,7 +2,9 @@ const string c_starmapPath = "data/STARMAP.BIN";
 const string c_guidePath = "data/GUIDE.BIN";
 
 const string c_divider = "&&&&&&&&&&&&&&&&&&&&&";
-const uint64 c_removed = 0x3A6465766F6D6552; // "Removed:"
+const double c_removed = 2.05950387149503E-27; // "Removed:"
+
+const double c_ideps = 0.00001;
 
 string rstrip(const string &in str) {
     int last = str.findLastNotOf(" \n\r\t\0");
@@ -12,14 +14,14 @@ string rstrip(const string &in str) {
         return "";
 }
 
-int findobj(file & f, const string &in search, uint64 &out found_id, string &out found_name) {
+int findobj(file & f, const string &in search, double &out found_id, string &out found_name) {
     const uint namelen = search.length();
     array<string> possible;
 
     f.setPos(4);
 
     while (!f.isEndOfFile()) {
-        const uint64 tmpid = f.readUInt(8);
+        const double tmpid = f.readDouble();
         const string tmpname = f.readString(24);
         if (f.isEndOfFile()) break;
 
@@ -100,7 +102,7 @@ void main(const string args) {
     }
 
     string found_name;
-    uint64 found_id;
+    double found_id;
     const int query = findobj(fs, objname, found_id, found_name);
     fs.close();
 
@@ -120,11 +122,11 @@ void main(const string args) {
             fg.setPos(4);
 
             while (!fg.isEndOfFile()) {
-                const uint64 recid = fg.readUInt(8);
+                const double recid = fg.readDouble();
                 const string recmsg = rstrip(fg.readString(76));
                 if (fg.isEndOfFile()) break;
 
-                if (recid == found_id) {
+                if (recid >= found_id - c_ideps && recid <= found_id + c_ideps) {
                     ++rec;
                     // TODO: word wrap
                     if (rec >= recstart && rec <= recend) {
