@@ -1,3 +1,6 @@
+const string c_starmapPath = "data/STARMAP.BIN";
+const string c_guidePath = "data/GUIDE.BIN";
+
 const string c_divider = "&&&&&&&&&&&&&&&&&&&&&";
 const uint64 c_removed = 0x3A6465766F6D6552; // "Removed:"
 
@@ -91,7 +94,7 @@ void main(const string args) {
     }
 
     file fs, fg;
-    if (fs.open("data/starmap.bin", "r") < 0) {
+    if (fs.open(c_starmapPath, "r") < 0) {
         println("STARMAP NOT AVAILABLE");
         return;
     }
@@ -109,7 +112,7 @@ void main(const string args) {
         println(found_name);
         println(c_divider);
 
-        if (fg.open("data/guide.bin", "r") < 0) {
+        if (fg.open(c_guidePath, "r") < 0) {
             println("DATABASE ERROR");
             println("(ERROR CODE 1003)");
         } else {
