@@ -2309,7 +2309,7 @@ void modpv(int16_t handle, int16_t polygon_id, int16_t vertex_id, float x_scale,
 // Returns the alphabetic correspondent of integers and / or real numbers.
 
 char *alphavalue(double value) {
-    gcvt(value, 15, dec);
+    snprintf(dec, sizeof(dec), "%.15g", value);
     return (dec);
 }
 
