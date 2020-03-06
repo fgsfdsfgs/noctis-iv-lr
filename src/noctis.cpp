@@ -2150,7 +2150,8 @@ void dev_commands() {
 
                         fseek(smh, 0, SEEK_END);
                         star_label_pos = fseek(smh, 0, SEEK_CUR);
-                        fwrite(&star_id, 1, 32, smh);
+                        fwrite(&star_id, 1, 8, smh);
+                        fwrite(star_label, 1, 24, smh);
                         fclose(smh);
                         status("ASSIGNED", 50);
                         nearstar_labeled++;
@@ -2224,7 +2225,8 @@ void dev_commands() {
 
                         fseek(smh, 0, SEEK_END);
                         planet_label_pos = fseek(smh, 0, SEEK_CUR);
-                        fwrite(&planet_id, 1, 32, smh);
+                        fwrite(&planet_id, 1, 8, smh);
+                        fwrite(planet_label, 1, 24, smh);
                         fclose(smh);
                         status("ASSIGNED", 50);
                         nearstar_labeled++;
